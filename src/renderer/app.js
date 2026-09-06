@@ -256,7 +256,8 @@ function render() {
   $('#add-element span').textContent = definition.elementLabel;
   $('#document-title').value = doc.title;
   $('#document-description').value = doc.metadata.description || '';
-  $('#interaction-hint').innerHTML = doc.diagramType === 'class' ? '<strong>接続方法</strong><p>クラスの上下左右にある接続点から別のクラスへドラッグします。</p>' : '<strong>メッセージ追加</strong><p>送信元の縦ライフラインを左クリックし、別のライフラインへドラッグします。オブジェクトは左右ドラッグで順番のみ変更できます。</p>';
+  $('#interaction-hint').hidden = doc.diagramType === 'class';
+  $('#interaction-hint').innerHTML = doc.diagramType === 'sequence' ? '<strong>メッセージ追加</strong><p>送信元の縦ライフラインを左クリックし、別のライフラインへドラッグします。オブジェクトは左右ドラッグで順番のみ変更できます。</p>' : '';
   renderCanvasOnly();
   renderList();
   renderInspector();
@@ -375,9 +376,6 @@ function opposite(side) {
 $('#document-title').addEventListener('input', event => { doc.title = event.target.value; markDirty(); });
 $('#document-description').addEventListener('input', event => { doc.metadata.description = event.target.value; markDirty(); });
 $('#new-button').onclick = requestNew;
-$('#open-button').onclick = () => window.desktop.open();
-$('#save-button').onclick = () => window.desktop.save(false);
-$('#ai-export-button').onclick = showAiExport;
 $('#add-element').onclick = addElement;
 $('#add-note').onclick = addNote;
 $('#delete-button').onclick = deleteSelection;
