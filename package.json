@@ -1,0 +1,24 @@
+{
+  "name": "umlmaker",
+  "version": "0.1.0",
+  "description": "AI-friendly UML diagram editor for Windows",
+  "type": "module",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/document.test.js",
+    "test:smoke": "node test/electron-smoke.cjs",
+    "pack:win": "electron-builder --win portable nsis"
+  },
+  "build": {
+    "appId": "jp.umlmaker.desktop",
+    "productName": "UML Maker",
+    "files": ["src/**/*", "package.json"],
+    "win": { "target": ["portable", "nsis"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  }
+}
