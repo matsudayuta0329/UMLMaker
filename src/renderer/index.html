@@ -24,9 +24,7 @@
       <div class="panel-heading"><span>ドキュメント</span><span id="diagram-badge" class="badge"></span></div>
       <label class="field"><span>タイトル</span><input id="document-title"></label>
       <label class="field"><span>概要（AI向け）</span><textarea id="document-description" rows="4" placeholder="この設計の目的や前提"></textarea></label>
-      <div class="panel-heading objects-heading"><span>要素</span><span id="element-count">0</span></div>
-      <div id="element-list" class="element-list"></div>
-      <div class="hint"><strong>接続方法</strong><p>要素を選択し、上下左右の接続点から別の要素へドラッグします。</p></div>
+      <div id="interaction-hint" class="hint"></div>
     </aside>
     <section id="workspace" class="workspace">
       <div class="canvas-rulers"><span id="zoom-label">100%</span></div>
@@ -37,11 +35,12 @@
           <marker id="diamond" markerWidth="15" markerHeight="12" refX="14" refY="6" orient="auto"><path d="M1,6 L7,1 L14,6 L7,11 z" fill="#151b26" stroke="context-stroke"/></marker>
           <marker id="diamond-filled" markerWidth="15" markerHeight="12" refX="14" refY="6" orient="auto"><path d="M1,6 L7,1 L14,6 L7,11 z" fill="context-stroke"/></marker>
         </defs></svg>
-        <div id="empty-state" class="empty-state"><div>◇</div><strong>要素を追加して設計を始めましょう</strong><span>上の「＋ 要素」ボタンから追加できます</span></div>
       </div>
     </section>
     <aside class="right-panel">
-      <div class="panel-heading">プロパティ</div>
+      <div class="panel-heading objects-heading"><span>要素一覧</span><span id="element-count">0</span></div>
+      <div id="element-list" class="element-list"></div>
+      <div class="panel-heading properties-heading">プロパティ</div>
       <div id="inspector-empty" class="inspector-empty">要素、矢印、メモを選択すると<br>ここで詳細を編集できます。</div>
       <div id="inspector"></div>
     </aside>

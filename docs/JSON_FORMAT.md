@@ -27,6 +27,8 @@ UML MakerのJSONは、描画の再現に必要な座標と、AIが設計意図�
 
 `elements` は `kind: "participant"` を持ちます。`relationships` はメッセージを表し、`type` は `sync`, `async`, `return`, `create`, `destroy` のいずれかです。`y` がメッセージの時系列位置です。
 
+参加オブジェクトは配列順で左から並び、上下移動や任意座標への配置は行いません。メッセージの `y` が増えると編集キャンバスとライフラインも自動的に延長されます。
+
 ## 新しい図タイプの追加
 
 1. `src/core/diagram-types.js` から `registerDiagramType` を呼び、ラベル、要素ファクトリー、関係タイプを登録します。
