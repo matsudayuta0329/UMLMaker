@@ -1,12 +1,12 @@
 {
   "name": "umlmaker",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "AI-friendly UML diagram editor for Windows",
   "type": "module",
   "main": "src/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/document.test.js",
+    "test": "node --test test/document.test.js test/ai-export.test.js",
     "test:smoke": "node test/electron-smoke.cjs",
     "pack:win": "electron-builder --win portable nsis"
   },

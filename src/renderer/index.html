@@ -13,6 +13,7 @@
       <button id="new-button" title="新規作成 (Ctrl+N)">＋ 新規</button>
       <button id="open-button" title="開く (Ctrl+O)">開く</button>
       <button id="save-button" class="primary" title="保存 (Ctrl+S)">保存</button>
+      <button id="ai-export-button" title="AI指示用JSONを表示">AI用JSON</button>
       <span class="separator"></span>
       <button id="add-element">＋ <span>要素</span></button>
       <button id="add-note">＋ メモ</button>
@@ -51,6 +52,14 @@
       <div class="dialog-title"><small>NEW DOCUMENT</small><h2>作成する図を選択</h2><p>保存操作をするまでファイルは作成されません。</p></div>
       <div id="type-options" class="type-options"></div>
       <div class="dialog-actions"><button value="cancel">キャンセル</button><button id="create-document" value="default" class="primary">作成</button></div>
+    </form>
+  </dialog>
+  <dialog id="ai-export-dialog" class="ai-export-dialog">
+    <form method="dialog">
+      <div class="dialog-title"><small>AI INSTRUCTION JSON</small><h2>AI指示用JSON</h2><p>内部IDや座標を除き、チャットで理解しやすい日本語の構造に変換しています。</p></div>
+      <textarea id="ai-export-text" readonly spellcheck="false" aria-label="AI指示用JSON全文"></textarea>
+      <div class="ai-export-summary" id="ai-export-summary"></div>
+      <div class="dialog-actions"><button value="cancel">閉じる</button><button id="copy-ai-json" type="button" class="primary">全文をコピー</button></div>
     </form>
   </dialog>
   <div id="toast" role="status"></div>

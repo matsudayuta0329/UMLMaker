@@ -1,5 +1,6 @@
 import { createDocument, validateDocument, serializable, id } from '../core/document.js';
 import { getDiagramType, listDiagramTypes } from '../core/registry.js';
+import { createAiInstructionText } from '../core/ai-export.js';
 import '../core/diagram-types.js';
 
 const $ = selector => document.querySelector(selector);
@@ -39,6 +40,15 @@ function toast(message) {
   element.classList.add('show');
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => element.classList.remove('show'), 1800);
+}
+
+function showAiExport() {
+  const text = createAiInstructionText(doc);
+  $('#ai-export-text').value = text;
+  $('#ai-export-summary').textContent = `${getDiagramType(doc.diagramType).label} · ${doc.elements.length}要素 · ${doc.relationships.length}関係 · ${text.length.toLocaleString()}文字`;
+  $('#copy-ai-json').textContent = '全文をコピー';
+  $('#ai-export-dialog').showModal();
+  $('#ai-export-text').scrollTop = 0;
 }
 
 function newDialog() {
@@ -367,6 +377,7 @@ $('#document-description').addEventListener('input', event => { doc.metadata.des
 $('#new-button').onclick = requestNew;
 $('#open-button').onclick = () => window.desktop.open();
 $('#save-button').onclick = () => window.desktop.save(false);
+$('#ai-export-button').onclick = showAiExport;
 $('#add-element').onclick = addElement;
 $('#add-note').onclick = addNote;
 $('#delete-button').onclick = deleteSelection;
@@ -378,9 +389,15 @@ $('#type-options').addEventListener('click', event => {
   document.querySelectorAll('.type-card').forEach(item => item.classList.toggle('selected', item === card));
 });
 $('#create-document').addEventListener('click', () => createNew(chosenType));
+$('#copy-ai-json').addEventListener('click', async () => {
+  await window.desktop.copyText($('#ai-export-text').value);
+  $('#copy-ai-json').textContent = 'コピーしました';
+  toast('AI指示用JSONをクリップボードへコピーしました');
+});
 window.addEventListener('keydown', event => { if (event.key === 'Delete' && selection && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) deleteSelection(); });
 
 window.desktop.onNewRequested(() => newDialog());
+window.desktop.onAIExportRequested(showAiExport);
 window.desktop.onOpened(({ document: incoming, filePath: openedPath }) => {
   try {
     doc = validateDocument(incoming, listDiagramTypes().map(type => type.type));

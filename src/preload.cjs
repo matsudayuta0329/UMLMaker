@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('desktop', {
   onNewRequested: (callback) => ipcRenderer.on('document:new-requested', callback),
   onOpened: (callback) => ipcRenderer.on('document:opened', (_event, value) => callback(value)),
   onSaved: (callback) => ipcRenderer.on('document:saved', (_event, value) => callback(value)),
+  onAIExportRequested: (callback) => ipcRenderer.on('document:ai-export-requested', callback),
+  copyText: (value) => ipcRenderer.invoke('clipboard:write-text', value),
   onSerialize: (callback) => ipcRenderer.on('document:serialize-request', async (_event, requestId) => {
     ipcRenderer.send('document:serialize-response', requestId, await callback());
   })

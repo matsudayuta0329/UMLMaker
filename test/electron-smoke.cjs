@@ -48,6 +48,12 @@ function connect(url) {
     if (!classConnection.preview || classConnection.edges !== 1 || classConnection.labels !== 0 || !classConnection.plainLine) throw new Error(`Class connection failed: ${JSON.stringify(classConnection)}`);
     const classMarker = await client.evaluate(`(()=>{const type=document.querySelector('#inspector [data-key="type"]');type.value='inheritance';type.dispatchEvent(new Event('input',{bubbles:true}));return document.querySelector('.edge-line').getAttribute('marker-end')})()`);
     if (classMarker !== 'url(#triangle)') throw new Error(`Class marker failed: ${JSON.stringify(classMarker)}`);
+    const classAiExport = await client.evaluate(`(()=>{document.querySelector('#ai-export-button').click();const text=document.querySelector('#ai-export-text').value;return {open:document.querySelector('#ai-export-dialog').open,hasClasses:text.includes('"クラス一覧"'),hasRelationships:text.includes('"関係一覧"'),hasInternalId:text.includes('sourceId'),hasCoordinates:/"[xy]"\s*:/.test(text)}})()`);
+    if (!classAiExport.open || !classAiExport.hasClasses || !classAiExport.hasRelationships || classAiExport.hasInternalId || classAiExport.hasCoordinates) throw new Error(`Class AI export failed: ${JSON.stringify(classAiExport)}`);
+    await client.evaluate(`document.querySelector('#copy-ai-json').click()`); await delay(100);
+    const copied = await client.evaluate(`document.querySelector('#copy-ai-json').textContent`);
+    if (copied !== 'コピーしました') throw new Error(`AI copy failed: ${JSON.stringify(copied)}`);
+    await client.evaluate(`document.querySelector('#ai-export-dialog').close()`);
     await client.evaluate(`document.querySelector('#new-button').click()`); await delay(100);
     await client.evaluate(`document.querySelector('[data-type="sequence"]').click();document.querySelector('#create-document').click();document.querySelector('#add-element').click();document.querySelector('#add-element').click()`);
     const sequenceState = await client.evaluate(`(()=>{const participant=document.querySelector('.participant').getBoundingClientRect(),line=document.querySelector('.lifeline').getBoundingClientRect();return {nodes:document.querySelectorAll('.participant').length,badge:document.querySelector('#diagram-badge').textContent,ports:document.querySelectorAll('.participant .port').length,lifelines:document.querySelectorAll('.lifeline').length,lineStartsBelowObject:line.top>=participant.bottom-2,lineExtendsDown:line.bottom>line.top}})()`);
@@ -58,6 +64,8 @@ function connect(url) {
     if (sequenceGrowth.canvas < 2100 || sequenceGrowth.lifeline < 1900) throw new Error(`Sequence growth failed: ${JSON.stringify(sequenceGrowth)}`);
     const sequenceOrder = await client.evaluate(`(()=>{const nodes=document.querySelectorAll('.participant'),second=nodes[1],r=second.getBoundingClientRect();second.querySelector('.node-title').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+r.width/2,clientY:r.top+20}));document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:r.left-250,clientY:r.top+20}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:r.left-250,clientY:r.top+20}));return [...document.querySelectorAll('.list-item')].map(x=>x.textContent.trim())})()`);
     if (!sequenceOrder[0].includes('object2')) throw new Error(`Sequence reorder failed: ${JSON.stringify(sequenceOrder)}`);
+    const sequenceAiExport = await client.evaluate(`(()=>{document.querySelector('#ai-export-button').click();const value=JSON.parse(document.querySelector('#ai-export-text').value);return {type:value['図の種類'],objects:value['オブジェクト一覧'].length,messages:value['処理フロー'].length,messageType:value['処理フロー'][0]['種類']}})()`);
+    if (sequenceAiExport.type !== 'シーケンス図' || sequenceAiExport.objects !== 2 || sequenceAiExport.messages !== 1 || sequenceAiExport.messageType !== '同期') throw new Error(`Sequence AI export failed: ${JSON.stringify(sequenceAiExport)}`);
     console.log('Electron smoke test passed:', { initial, classState, sequenceState });
   } finally {
     client?.close(); child.kill();

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, clipboard } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
@@ -44,9 +44,9 @@ async function saveDocument(saveAs = false) {
   let target = saveAs ? null : currentPath;
   if (!target) {
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'UML JSONを保存',
-      defaultPath: 'diagram.json',
-      filters: [{ name: 'UML Maker JSON', extensions: ['json'] }]
+      title: 'UML Makerドキュメントを保存',
+      defaultPath: 'diagram.umlmaker.json',
+      filters: [{ name: 'UML MakerドキュメントJSON', extensions: ['json'] }]
     });
     if (result.canceled) return false;
     target = result.filePath;
@@ -84,7 +84,11 @@ function buildMenu() {
         { label: '開く / インポート…', accelerator: 'CmdOrCtrl+O', click: openDocument },
         { type: 'separator' },
         { label: '保存', accelerator: 'CmdOrCtrl+S', click: () => saveDocument(false) },
-        { label: '名前を付けて保存 / 書き出し…', accelerator: 'CmdOrCtrl+Shift+S', click: () => saveDocument(true) },
+        { label: '名前を付けて保存…', accelerator: 'CmdOrCtrl+Shift+S', click: () => saveDocument(true) },
+        { label: 'エクスポート', submenu: [
+          { label: 'ドキュメントJSONを保存…', click: () => saveDocument(true) },
+          { label: 'AI指示用JSONを表示…', click: () => mainWindow.webContents.send('document:ai-export-requested') }
+        ] },
         { type: 'separator' },
         { role: 'quit', label: '終了' }
       ]
@@ -95,7 +99,7 @@ function buildMenu() {
       { role: 'copy', label: 'コピー' }, { role: 'paste', label: '貼り付け' }
     ] },
     { label: '表示', submenu: [{ role: 'reload', label: '再読み込み' }, { role: 'toggleDevTools', label: '開発者ツール' }, { role: 'togglefullscreen', label: '全画面' }] },
-    { label: 'ヘルプ', submenu: [{ label: 'UML Makerについて', click: () => dialog.showMessageBox(mainWindow, { title: 'UML Maker', message: 'UML Maker 0.2.1', detail: 'AIに渡しやすいJSON形式のUML設計ツール' }) }] }
+    { label: 'ヘルプ', submenu: [{ label: 'UML Makerについて', click: () => dialog.showMessageBox(mainWindow, { title: 'UML Maker', message: 'UML Maker 0.3.0', detail: 'AIに渡しやすいJSON形式のUML設計ツール' }) }] }
   ]);
 }
 
@@ -123,6 +127,7 @@ ipcMain.on('document:serialize-response', (_event, requestId, document) => {
 ipcMain.handle('document:save', (_event, saveAs) => saveDocument(Boolean(saveAs)));
 ipcMain.handle('document:open', openDocument);
 ipcMain.handle('document:confirm-replace', askToDiscard);
+ipcMain.handle('clipboard:write-text', (_event, value) => clipboard.writeText(String(value)));
 ipcMain.on('document:new-created', () => { currentPath = null; dirty = false; updateTitle(); });
 
 app.whenReady().then(createWindow);
