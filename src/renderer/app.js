@@ -139,11 +139,12 @@ function pointFor(element, side, relationship) {
   return points[side] || points.right;
 }
 
-function markerFor(type) {
-  if (type === 'inheritance' || type === 'realization') return 'url(#triangle)';
-  if (type === 'aggregation') return 'url(#diamond)';
-  if (type === 'composition') return 'url(#diamond-filled)';
-  return 'url(#arrow)';
+function markerAttributesFor(type) {
+  if (type === 'association') return '';
+  if (type === 'aggregation') return 'marker-start="url(#diamond)"';
+  if (type === 'composition') return 'marker-start="url(#diamond-filled)"';
+  if (type === 'inheritance' || type === 'realization') return 'marker-end="url(#triangle)"';
+  return 'marker-end="url(#arrow)"';
 }
 
 function edgeLabel(rel, x, y) {
@@ -163,7 +164,7 @@ function renderEdges() {
     const dashed = ['dependency', 'realization', 'return', 'async'].includes(rel.type) ? 'stroke-dasharray="7 5"' : '';
     const middleX = (start.x + end.x) / 2;
     const middleY = (start.y + end.y) / 2;
-    return `<g class="edge-group ${selection?.kind === 'relationship' && selection.id === rel.id ? 'selected' : ''}" data-id="${rel.id}"><path class="edge-hit" d="M${start.x},${start.y} L${end.x},${end.y}"/><path class="edge-line" ${dashed} marker-end="${markerFor(rel.type)}" d="M${start.x},${start.y} L${end.x},${end.y}"/>${edgeLabel(rel, middleX, middleY)}</g>`;
+    return `<g class="edge-group ${selection?.kind === 'relationship' && selection.id === rel.id ? 'selected' : ''}" data-id="${rel.id}" data-relationship-type="${rel.type}"><path class="edge-hit" d="M${start.x},${start.y} L${end.x},${end.y}"/><path class="edge-line" ${dashed} ${markerAttributesFor(rel.type)} d="M${start.x},${start.y} L${end.x},${end.y}"/>${edgeLabel(rel, middleX, middleY)}</g>`;
   }).join('');
   const preview = connection ? `<g><circle class="connection-source" cx="${connection.start.x}" cy="${connection.start.y}" r="5"/><path class="connection-preview" d="M${connection.start.x},${connection.start.y} L${connection.current.x},${connection.current.y}"/></g>` : '';
   svg.innerHTML = definitions + relationships + preview;
