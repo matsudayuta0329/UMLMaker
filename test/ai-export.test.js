@@ -6,14 +6,14 @@ test('class AI export lists classes before Japanese relationships without coordi
   const result = createAiInstruction({
     diagramType: 'class', title: '注文', metadata: { description: '注文設計' },
     elements: [
-      { id: 'a', name: 'Order', attributes: ['id: string'], operations: ['save()'], note: '' },
+      { id: 'a', name: 'Order', attributes: [{ name: 'id', type: 'string', visibility: 'private' }], operations: [{ name: 'save', returnType: 'void', visibility: 'public', parameters: [{ name: 'force', type: 'boolean' }] }], note: '' },
       { id: 'b', name: 'Customer', attributes: [], operations: [], note: '購入者' }
     ],
     relationships: [{ sourceId: 'a', targetId: 'b', type: 'association', label: '', note: '' }], notes: []
   });
   assert.deepEqual(Object.keys(result), ['用途', '図の種類', 'タイトル', '設計概要', 'クラス一覧', '関係一覧', '図全体のメモ']);
-  assert.deepEqual(result.クラス一覧[0].属性, ['- id: string']);
-  assert.deepEqual(result.クラス一覧[0].操作, ['+ save()']);
+  assert.deepEqual(result.クラス一覧[0].属性[0], { 名前: 'id', 型名: 'string', 可視性: 'private', UML表記: '- id: string' });
+  assert.deepEqual(result.クラス一覧[0].操作[0], { 名前: 'save', 返り値型: 'void', 可視性: 'public', 引数: [{ 名前: 'force', 型名: 'boolean' }], UML表記: '+ save(force: boolean): void' });
   assert.deepEqual(result.関係一覧[0], { 接続元クラス: 'Order', 接続先クラス: 'Customer', 関係: '関連' });
   assert.equal(JSON.stringify(result).includes('sourceId'), false);
   assert.equal(JSON.stringify(result).includes('"x"'), false);

@@ -10,7 +10,7 @@ export const messageTypes = [['sync', '同期'], ['async', '非同期'], ['retur
 registerDiagramType({
   type: 'class', label: 'クラス図', description: 'クラス、属性、操作と関係を設計します', icon: '◇',
   elementLabel: 'クラス', relationships: classRelationships,
-  createElement: (index) => ({ id: id('class'), kind: 'class', name: `Class${index + 1}`, x: 120 + index * 36, y: 100 + index * 36, width: 240, attributes: [], operations: [], note: '' })
+  createElement: (index) => ({ id: id('class'), kind: 'class', name: `Class${index + 1}`, x: 120 + index * 36, y: 100 + index * 36, width: 260, attributes: [], operations: [], note: '' })
 });
 registerDiagramType({
   type: 'sequence', label: 'シーケンス図', description: 'オブジェクト間のメッセージを時系列で設計します', icon: '⇥',

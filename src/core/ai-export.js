@@ -7,6 +7,19 @@ const MESSAGE_TYPES = {
   sync: '同期', async: '非同期', return: '戻り', create: '生成', destroy: '破棄'
 };
 
+const VISIBILITY_SYMBOLS = { public: '+', private: '-', protected: '#', package: '~' };
+
+function attributeNotation(attribute) {
+  const symbol = VISIBILITY_SYMBOLS[attribute.visibility] || '';
+  return `${symbol} ${attribute.name}${attribute.type ? `: ${attribute.type}` : ''}`.trim();
+}
+
+function operationNotation(operation) {
+  const symbol = VISIBILITY_SYMBOLS[operation.visibility] || '';
+  const parameters = (operation.parameters || []).map(parameter => `${parameter.name}${parameter.type ? `: ${parameter.type}` : ''}`).join(', ');
+  return `${symbol} ${operation.name}(${parameters}): ${operation.returnType || 'void'}`.trim();
+}
+
 function present(object) {
   return Object.fromEntries(Object.entries(object).filter(([, value]) => {
     if (Array.isArray(value)) return value.length > 0;
@@ -29,8 +42,19 @@ function classExport(document) {
     ...common(document, 'クラス図'),
     クラス一覧: document.elements.map(element => present({
       クラス名: element.name,
-      属性: (element.attributes || []).map(value => `- ${value.replace(/^[-+#~]\s*/, '')}`),
-      操作: (element.operations || []).map(value => `+ ${value.replace(/^[-+#~]\s*/, '')}`),
+      属性: (element.attributes || []).map(attribute => present({
+        名前: attribute.name,
+        型名: attribute.type,
+        可視性: attribute.visibility,
+        UML表記: attributeNotation(attribute)
+      })),
+      操作: (element.operations || []).map(operation => present({
+        名前: operation.name,
+        返り値型: operation.returnType || 'void',
+        可視性: operation.visibility,
+        引数: (operation.parameters || []).map(parameter => present({ 名前: parameter.name, 型名: parameter.type })),
+        UML表記: operationNotation(operation)
+      })),
       メモ: element.note || ''
     })),
     関係一覧: document.relationships.map(relationship => present({

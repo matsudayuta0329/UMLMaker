@@ -9,6 +9,7 @@ const svg = $('#edges');
 const PARTICIPANT_START_X = 100;
 const PARTICIPANT_GAP = 240;
 const PARTICIPANT_Y = 70;
+const VISIBILITY = { public: '+', private: '-', protected: '#', package: '~' };
 
 let doc = createDocument('class');
 let selection = null;
@@ -17,6 +18,7 @@ let filePath = null;
 let drag = null;
 let connection = null;
 let chosenType = 'class';
+let memberSelection = { classId: null, attributeId: null, operationId: null, parameterId: null };
 
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
@@ -67,6 +69,7 @@ function createNew(type) {
   dirty = false;
   filePath = null;
   connection = null;
+  memberSelection = { classId: null, attributeId: null, operationId: null, parameterId: null };
   window.desktop.newCreated();
   render();
   updateStatus();
@@ -117,8 +120,13 @@ function portHtml() {
   return ['top', 'right', 'bottom', 'left'].map(side => `<i class="port" data-side="${side}"></i>`).join('');
 }
 
-function memberLines(lines, visibility) {
-  return lines.map(line => `<div><span class="visibility">${visibility}</span>${escapeHtml(line.replace(/^[-+#~]\s*/, ''))}</div>`).join('');
+function attributeNotation(attribute) {
+  return `${VISIBILITY[attribute.visibility] || ''} ${attribute.name || ''}${attribute.type ? `: ${attribute.type}` : ''}`.trim();
+}
+
+function operationNotation(operation) {
+  const parameters = (operation.parameters || []).map(parameter => `${parameter.name || ''}${parameter.type ? `: ${parameter.type}` : ''}`).join(', ');
+  return `${VISIBILITY[operation.visibility] || ''} ${operation.name || ''}(${parameters}): ${operation.returnType || 'void'}`.trim();
 }
 
 function sequenceCanvasHeight() {
@@ -130,7 +138,7 @@ function sequenceCanvasHeight() {
 function renderNode(element, index) {
   const selected = selection?.kind === 'element' && selection.id === element.id;
   if (doc.diagramType === 'class') {
-    return `<div class="node class-node ${selected ? 'selected' : ''}" data-id="${element.id}" style="left:${element.x}px;top:${element.y}px;width:${element.width}px"><div class="node-title">${escapeHtml(element.name)}</div><div class="class-section">${memberLines(element.attributes || [], '-')}</div><div class="class-section">${memberLines(element.operations || [], '+')}</div>${element.note ? `<div class="class-section class-note">${escapeHtml(element.note)}</div>` : ''}${portHtml()}</div>`;
+    return `<div class="node class-node ${selected ? 'selected' : ''}" data-id="${element.id}" style="left:${element.x}px;top:${element.y}px;width:${element.width}px"><div class="node-title">${escapeHtml(element.name)}</div><div class="class-section">${(element.attributes || []).map(attribute => `<div>${escapeHtml(attributeNotation(attribute))}</div>`).join('')}</div><div class="class-section">${(element.operations || []).map(operation => `<div>${escapeHtml(operationNotation(operation))}</div>`).join('')}</div>${element.note ? `<div class="class-section class-note">${escapeHtml(element.note)}</div>` : ''}${portHtml()}</div>`;
   }
   const lifelineHeight = sequenceCanvasHeight() - PARTICIPANT_Y - 43;
   return `<div class="node participant ${selected ? 'selected' : ''}" data-id="${element.id}" style="left:${element.x}px;top:${PARTICIPANT_Y}px;width:${element.width}px"><span class="sequence-index">${index + 1}</span><div class="node-title">${escapeHtml(element.name)}</div><div class="lifeline" data-participant-id="${element.id}" style="height:${lifelineHeight}px" title="別のライフラインへドラッグしてメッセージを追加"></div></div>`;
@@ -199,6 +207,43 @@ function field(label, key, value, type = 'input') {
   return `<label class="field"><span>${label}</span>${type === 'textarea' ? `<textarea data-key="${key}" rows="4">${escapeHtml(value)}</textarea>` : `<input data-key="${key}" value="${escapeHtml(value)}">`}</label>`;
 }
 
+function visibilityOptions(selected) {
+  return Object.entries(VISIBILITY).map(([value, symbol]) => `<option value="${value}" ${selected === value ? 'selected' : ''}>${value} (${symbol})</option>`).join('');
+}
+
+function memberField(label, model, itemId, key, value, operationId = '') {
+  return `<label><span>${label}</span><input data-member-model="${model}" data-item-id="${itemId}" data-operation-id="${operationId}" data-member-key="${key}" value="${escapeHtml(value || '')}"></label>`;
+}
+
+function visibilityField(model, itemId, value) {
+  return `<label><span>可視性</span><select data-member-model="${model}" data-item-id="${itemId}" data-member-key="visibility">${visibilityOptions(value)}</select></label>`;
+}
+
+function renderClassArrays(element) {
+  const selectedAttribute = memberSelection.classId === element.id ? memberSelection.attributeId : null;
+  const selectedOperation = memberSelection.classId === element.id ? memberSelection.operationId : null;
+  const selectedParameter = memberSelection.classId === element.id ? memberSelection.parameterId : null;
+  const attributes = (element.attributes || []).map((attribute, index) => `
+    <div class="array-item ${selectedAttribute === attribute.id ? 'selected' : ''}" data-array-item="attribute" data-item-id="${attribute.id}">
+      <button type="button" class="array-item-title" data-select-member="attribute" data-item-id="${attribute.id}">Element ${index}</button>
+      <div class="member-grid three">${visibilityField('attribute', attribute.id, attribute.visibility)}${memberField('名前', 'attribute', attribute.id, 'name', attribute.name)}${memberField('型名', 'attribute', attribute.id, 'type', attribute.type)}</div>
+    </div>`).join('');
+  const operations = (element.operations || []).map((operation, index) => {
+    const parameters = (operation.parameters || []).map((parameter, parameterIndex) => `
+      <div class="parameter-item ${selectedOperation === operation.id && selectedParameter === parameter.id ? 'selected' : ''}">
+        <button type="button" class="array-item-title small" data-select-member="parameter" data-operation-id="${operation.id}" data-item-id="${parameter.id}">Element ${parameterIndex}</button>
+        <div class="member-grid two">${memberField('名前', 'parameter', parameter.id, 'name', parameter.name, operation.id)}${memberField('型名', 'parameter', parameter.id, 'type', parameter.type, operation.id)}</div>
+      </div>`).join('');
+    return `<div class="array-item operation-item ${selectedOperation === operation.id ? 'selected' : ''}" data-array-item="operation" data-item-id="${operation.id}">
+      <button type="button" class="array-item-title" data-select-member="operation" data-item-id="${operation.id}">Element ${index}</button>
+      <div class="member-grid three">${visibilityField('operation', operation.id, operation.visibility)}${memberField('名前', 'operation', operation.id, 'name', operation.name)}${memberField('返り値型', 'operation', operation.id, 'returnType', operation.returnType || 'void')}</div>
+      <div class="nested-array"><div class="array-header nested"><span>引数 <small>Size ${operation.parameters?.length || 0}</small></span><div><button type="button" data-array-action="add-parameter" data-operation-id="${operation.id}" title="引数を追加">＋</button><button type="button" data-array-action="remove-parameter" data-operation-id="${operation.id}" ${selectedOperation === operation.id && selectedParameter ? '' : 'disabled'} title="選択した引数を削除">−</button></div></div>${parameters || '<div class="array-empty">引数なし</div>'}</div>
+    </div>`;
+  }).join('');
+  return `<div class="array-section"><div class="array-header"><strong>属性 <small>Size ${element.attributes?.length || 0}</small></strong><div><button type="button" data-array-action="add-attribute" title="属性を追加">＋</button><button type="button" data-array-action="remove-attribute" ${selectedAttribute ? '' : 'disabled'} title="選択した属性を削除">−</button></div></div>${attributes || '<div class="array-empty">属性なし</div>'}</div>
+    <div class="array-section"><div class="array-header"><strong>操作 <small>Size ${element.operations?.length || 0}</small></strong><div><button type="button" data-array-action="add-operation" title="操作を追加">＋</button><button type="button" data-array-action="remove-operation" ${selectedOperation ? '' : 'disabled'} title="選択した操作を削除">−</button></div></div>${operations || '<div class="array-empty">操作なし</div>'}</div>`;
+}
+
 function renderInspector() {
   const box = $('#inspector');
   $('#inspector-empty').hidden = Boolean(selection);
@@ -207,10 +252,11 @@ function renderInspector() {
   if (selection.kind === 'element') {
     const element = doc.elements.find(item => item.id === selection.id);
     if (!element) return;
-    const classFields = field('属性（1行に1つ）', 'attributes', (element.attributes || []).join('\n'), 'textarea') + field('操作（1行に1つ）', 'operations', (element.operations || []).join('\n'), 'textarea');
+    const classFields = renderClassArrays(element);
     const positionFields = doc.diagramType === 'class' ? `<div class="row">${field('X', 'x', Math.round(element.x))}${field('Y', 'y', Math.round(element.y))}</div>` : `<p class="help-text">順番: ${doc.elements.indexOf(element) + 1}。左右へドラッグすると順番を入れ替えられます。</p>`;
     box.innerHTML = `<div class="inspector-section"><h3>${doc.diagramType === 'class' ? 'クラス' : 'オブジェクト'}</h3>${field('名前', 'name', element.name)}${doc.diagramType === 'class' ? classFields : ''}${field('メモ', 'note', element.note || '', 'textarea')}${positionFields}</div>`;
     bindInspector(element);
+    if (doc.diagramType === 'class') bindClassArrayInspector(element);
     return;
   }
   if (selection.kind === 'note') {
@@ -232,11 +278,68 @@ function bindInspector(target) {
     const key = control.dataset.key;
     let value = control.value;
     if (['x', 'y'].includes(key)) value = Number(value) || 0;
-    if (['attributes', 'operations'].includes(key)) value = value.split('\n').filter(Boolean);
     target[key] = value;
     markDirty();
     renderCanvasOnly();
     renderList();
+  }));
+}
+
+function commitArrayChange() {
+  markDirty();
+  renderCanvasOnly();
+  renderInspector();
+  renderList();
+}
+
+function bindClassArrayInspector(element) {
+  $('#inspector').querySelectorAll('[data-select-member]').forEach(control => control.addEventListener('click', () => {
+    memberSelection.classId = element.id;
+    const kind = control.dataset.selectMember;
+    if (kind === 'attribute') memberSelection.attributeId = control.dataset.itemId;
+    if (kind === 'operation') { memberSelection.operationId = control.dataset.itemId; memberSelection.parameterId = null; }
+    if (kind === 'parameter') { memberSelection.operationId = control.dataset.operationId; memberSelection.parameterId = control.dataset.itemId; }
+    renderInspector();
+  }));
+  $('#inspector').querySelectorAll('[data-member-key]').forEach(control => control.addEventListener('input', () => {
+    const model = control.dataset.memberModel;
+    let target;
+    if (model === 'attribute') target = element.attributes.find(item => item.id === control.dataset.itemId);
+    if (model === 'operation') target = element.operations.find(item => item.id === control.dataset.itemId);
+    if (model === 'parameter') target = element.operations.find(item => item.id === control.dataset.operationId)?.parameters.find(item => item.id === control.dataset.itemId);
+    if (!target) return;
+    target[control.dataset.memberKey] = control.value;
+    markDirty();
+    renderCanvasOnly();
+    renderList();
+  }));
+  $('#inspector').querySelectorAll('[data-array-action]').forEach(button => button.addEventListener('click', () => {
+    const action = button.dataset.arrayAction;
+    memberSelection.classId = element.id;
+    if (action === 'add-attribute') {
+      const attribute = { id: id('attribute'), name: `attribute${element.attributes.length + 1}`, type: '', visibility: 'private' };
+      element.attributes.push(attribute); memberSelection.attributeId = attribute.id;
+    }
+    if (action === 'remove-attribute' && memberSelection.attributeId) {
+      element.attributes = element.attributes.filter(item => item.id !== memberSelection.attributeId); memberSelection.attributeId = null;
+    }
+    if (action === 'add-operation') {
+      const operation = { id: id('operation'), name: `operation${element.operations.length + 1}`, returnType: 'void', visibility: 'public', parameters: [] };
+      element.operations.push(operation); memberSelection.operationId = operation.id; memberSelection.parameterId = null;
+    }
+    if (action === 'remove-operation' && memberSelection.operationId) {
+      element.operations = element.operations.filter(item => item.id !== memberSelection.operationId); memberSelection.operationId = null; memberSelection.parameterId = null;
+    }
+    if (action === 'add-parameter') {
+      const operation = element.operations.find(item => item.id === button.dataset.operationId);
+      const parameter = { id: id('parameter'), name: `arg${operation.parameters.length + 1}`, type: '' };
+      operation.parameters.push(parameter); memberSelection.operationId = operation.id; memberSelection.parameterId = parameter.id;
+    }
+    if (action === 'remove-parameter' && memberSelection.parameterId) {
+      const operation = element.operations.find(item => item.id === button.dataset.operationId);
+      operation.parameters = operation.parameters.filter(item => item.id !== memberSelection.parameterId); memberSelection.parameterId = null;
+    }
+    commitArrayChange();
   }));
 }
 

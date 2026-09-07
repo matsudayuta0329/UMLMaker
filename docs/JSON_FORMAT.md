@@ -1,4 +1,4 @@
-# UML Maker JSON format v1
+# UML Maker JSON format v2
 
 UML MakerのJSONは、描画の再現に必要な座標と、AIが設計意図を理解するための意味情報を一緒に保持します。
 
@@ -7,7 +7,7 @@ UML MakerのJSONは、描画の再現に必要な座標と、AIが設計意図�
 ```json
 {
   "schema": "umlmaker.document",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "diagramType": "class",
   "title": "注文ドメイン",
   "metadata": {
@@ -24,6 +24,10 @@ UML MakerのJSONは、描画の再現に必要な座標と、AIが設計意図�
 ## class
 
 `elements` は `kind: "class"` を持ち、`name`, `attributes[]`, `operations[]`, `note`, `x`, `y`, `width` を格納します。関係の `type` は `association`, `aggregation`, `composition`, `inheritance`, `realization`, `dependency` のいずれかです。
+
+属性は `{ id, name, type, visibility }`、操作は `{ id, name, returnType, visibility, parameters }`、引数は `{ id, name, type }` です。`visibility` は `public`, `private`, `protected`, `package` のいずれかです。旧schemaVersion 1の文字列配列は、読み込み時にこの形式へ自動移行されます。
+
+AI指示用JSONでは内部IDを除き、属性を `{ 名前, 型名, 可視性, UML表記 }`、操作を `{ 名前, 返り値型, 可視性, 引数, UML表記 }` として出力します。構造化情報を直接利用できる一方、`UML表記`を読むだけでもクラス定義を把握できます。
 
 ## sequence
 

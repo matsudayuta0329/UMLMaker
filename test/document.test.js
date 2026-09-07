@@ -14,6 +14,16 @@ test('validates registered document types', () => {
   assert.equal(validateDocument(createDocument('sequence')).diagramType, 'sequence');
   assert.throws(() => validateDocument({}), /UML Maker/);
 });
+test('migrates version 1 class members into structured schema version 2', () => {
+  const legacy = createDocument('class');
+  legacy.schemaVersion = 1;
+  legacy.elements = [{ attributes: ['# name: string'], operations: ['+ save(id: string): boolean'] }];
+  const migrated = validateDocument(legacy);
+  assert.equal(migrated.schemaVersion, 2);
+  assert.deepEqual(migrated.elements[0].attributes[0], { id: migrated.elements[0].attributes[0].id, name: 'name', type: 'string', visibility: 'protected' });
+  assert.equal(migrated.elements[0].operations[0].returnType, 'boolean');
+  assert.deepEqual(migrated.elements[0].operations[0].parameters.map(({ name, type }) => ({ name, type })), [{ name: 'id', type: 'string' }]);
+});
 test('diagram types are extensible through the registry', () => {
   assert.deepEqual(listDiagramTypes().map(x => x.type), ['class', 'sequence']);
   assert.equal(getDiagramType('class').createElement(0).kind, 'class');
