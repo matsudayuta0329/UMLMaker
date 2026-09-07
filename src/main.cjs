@@ -99,7 +99,7 @@ function buildMenu() {
       { role: 'copy', label: 'コピー' }, { role: 'paste', label: '貼り付け' }
     ] },
     { label: '表示', submenu: [{ role: 'reload', label: '再読み込み' }, { role: 'toggleDevTools', label: '開発者ツール' }, { role: 'togglefullscreen', label: '全画面' }] },
-    { label: 'ヘルプ', submenu: [{ label: 'UML Makerについて', click: () => dialog.showMessageBox(mainWindow, { title: 'UML Maker', message: 'UML Maker 0.4.0', detail: 'AIに渡しやすいJSON形式のUML設計ツール' }) }] }
+    { label: 'ヘルプ', submenu: [{ label: 'UML Makerについて', click: () => dialog.showMessageBox(mainWindow, { title: 'UML Maker', message: 'UML Maker 0.4.1', detail: 'AIに渡しやすいJSON形式のUML設計ツール' }) }] }
   ]);
 }
 

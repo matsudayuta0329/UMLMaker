@@ -1,6 +1,6 @@
 {
   "name": "umlmaker",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "AI-friendly UML diagram editor for Windows",
   "type": "module",
   "main": "src/main.cjs",

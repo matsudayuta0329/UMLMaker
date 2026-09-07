@@ -19,6 +19,7 @@ let drag = null;
 let connection = null;
 let chosenType = 'class';
 let memberSelection = { classId: null, attributeId: null, operationId: null, parameterId: null };
+const collapsedMembers = new Set();
 
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
@@ -70,6 +71,7 @@ function createNew(type) {
   filePath = null;
   connection = null;
   memberSelection = { classId: null, attributeId: null, operationId: null, parameterId: null };
+  collapsedMembers.clear();
   window.desktop.newCreated();
   render();
   updateStatus();
@@ -224,20 +226,20 @@ function renderClassArrays(element) {
   const selectedOperation = memberSelection.classId === element.id ? memberSelection.operationId : null;
   const selectedParameter = memberSelection.classId === element.id ? memberSelection.parameterId : null;
   const attributes = (element.attributes || []).map((attribute, index) => `
-    <div class="array-item ${selectedAttribute === attribute.id ? 'selected' : ''}" data-array-item="attribute" data-item-id="${attribute.id}">
-      <button type="button" class="array-item-title" data-select-member="attribute" data-item-id="${attribute.id}">Element ${index}</button>
-      <div class="member-grid three">${visibilityField('attribute', attribute.id, attribute.visibility)}${memberField('名前', 'attribute', attribute.id, 'name', attribute.name)}${memberField('型名', 'attribute', attribute.id, 'type', attribute.type)}</div>
+    <div class="array-item ${selectedAttribute === attribute.id ? 'selected' : ''} ${collapsedMembers.has(attribute.id) ? 'collapsed' : ''}" data-array-item="attribute" data-item-id="${attribute.id}">
+      <button type="button" class="array-item-title" data-select-member="attribute" data-item-id="${attribute.id}">${escapeHtml(attribute.name || `属性 ${index + 1}`)}</button>
+      <div class="array-item-body"><div class="member-grid three">${visibilityField('attribute', attribute.id, attribute.visibility)}${memberField('名前', 'attribute', attribute.id, 'name', attribute.name)}${memberField('型名', 'attribute', attribute.id, 'type', attribute.type)}</div></div>
     </div>`).join('');
   const operations = (element.operations || []).map((operation, index) => {
     const parameters = (operation.parameters || []).map((parameter, parameterIndex) => `
-      <div class="parameter-item ${selectedOperation === operation.id && selectedParameter === parameter.id ? 'selected' : ''}">
-        <button type="button" class="array-item-title small" data-select-member="parameter" data-operation-id="${operation.id}" data-item-id="${parameter.id}">Element ${parameterIndex}</button>
-        <div class="member-grid two">${memberField('名前', 'parameter', parameter.id, 'name', parameter.name, operation.id)}${memberField('型名', 'parameter', parameter.id, 'type', parameter.type, operation.id)}</div>
+      <div class="parameter-item ${selectedOperation === operation.id && selectedParameter === parameter.id ? 'selected' : ''} ${collapsedMembers.has(parameter.id) ? 'collapsed' : ''}">
+        <button type="button" class="array-item-title small" data-select-member="parameter" data-operation-id="${operation.id}" data-item-id="${parameter.id}">${escapeHtml(parameter.name || `引数 ${parameterIndex + 1}`)}</button>
+        <div class="array-item-body"><div class="member-grid two">${memberField('名前', 'parameter', parameter.id, 'name', parameter.name, operation.id)}${memberField('型名', 'parameter', parameter.id, 'type', parameter.type, operation.id)}</div></div>
       </div>`).join('');
-    return `<div class="array-item operation-item ${selectedOperation === operation.id ? 'selected' : ''}" data-array-item="operation" data-item-id="${operation.id}">
-      <button type="button" class="array-item-title" data-select-member="operation" data-item-id="${operation.id}">Element ${index}</button>
-      <div class="member-grid three">${visibilityField('operation', operation.id, operation.visibility)}${memberField('名前', 'operation', operation.id, 'name', operation.name)}${memberField('返り値型', 'operation', operation.id, 'returnType', operation.returnType || 'void')}</div>
-      <div class="nested-array"><div class="array-header nested"><span>引数 <small>Size ${operation.parameters?.length || 0}</small></span><div><button type="button" data-array-action="add-parameter" data-operation-id="${operation.id}" title="引数を追加">＋</button><button type="button" data-array-action="remove-parameter" data-operation-id="${operation.id}" ${selectedOperation === operation.id && selectedParameter ? '' : 'disabled'} title="選択した引数を削除">−</button></div></div>${parameters || '<div class="array-empty">引数なし</div>'}</div>
+    return `<div class="array-item operation-item ${selectedOperation === operation.id ? 'selected' : ''} ${collapsedMembers.has(operation.id) ? 'collapsed' : ''}" data-array-item="operation" data-item-id="${operation.id}">
+      <button type="button" class="array-item-title" data-select-member="operation" data-item-id="${operation.id}">${escapeHtml(operation.name || `操作 ${index + 1}`)}</button>
+      <div class="array-item-body"><div class="member-grid three">${visibilityField('operation', operation.id, operation.visibility)}${memberField('名前', 'operation', operation.id, 'name', operation.name)}${memberField('返り値型', 'operation', operation.id, 'returnType', operation.returnType || 'void')}</div>
+      <div class="nested-array"><div class="array-header nested"><span>引数 <small>Size ${operation.parameters?.length || 0}</small></span><div><button type="button" data-array-action="add-parameter" data-operation-id="${operation.id}" title="引数を追加">＋</button><button type="button" data-array-action="remove-parameter" data-operation-id="${operation.id}" ${selectedOperation === operation.id && selectedParameter ? '' : 'disabled'} title="選択した引数を削除">−</button></div></div>${parameters || '<div class="array-empty">引数なし</div>'}</div></div>
     </div>`;
   }).join('');
   return `<div class="array-section"><div class="array-header"><strong>属性 <small>Size ${element.attributes?.length || 0}</small></strong><div><button type="button" data-array-action="add-attribute" title="属性を追加">＋</button><button type="button" data-array-action="remove-attribute" ${selectedAttribute ? '' : 'disabled'} title="選択した属性を削除">−</button></div></div>${attributes || '<div class="array-empty">属性なし</div>'}</div>
@@ -254,7 +256,7 @@ function renderInspector() {
     if (!element) return;
     const classFields = renderClassArrays(element);
     const positionFields = doc.diagramType === 'class' ? `<div class="row">${field('X', 'x', Math.round(element.x))}${field('Y', 'y', Math.round(element.y))}</div>` : `<p class="help-text">順番: ${doc.elements.indexOf(element) + 1}。左右へドラッグすると順番を入れ替えられます。</p>`;
-    box.innerHTML = `<div class="inspector-section"><h3>${doc.diagramType === 'class' ? 'クラス' : 'オブジェクト'}</h3>${field('名前', 'name', element.name)}${doc.diagramType === 'class' ? classFields : ''}${field('メモ', 'note', element.note || '', 'textarea')}${positionFields}</div>`;
+    box.innerHTML = `<div class="inspector-section"><input class="identity-name" data-key="name" aria-label="${doc.diagramType === 'class' ? 'クラス名' : 'オブジェクト名'}" placeholder="${doc.diagramType === 'class' ? 'クラス名' : 'オブジェクト名'}" value="${escapeHtml(element.name)}">${doc.diagramType === 'class' ? classFields : ''}${field('メモ', 'note', element.note || '', 'textarea')}${positionFields}</div>`;
     bindInspector(element);
     if (doc.diagramType === 'class') bindClassArrayInspector(element);
     return;
@@ -299,6 +301,8 @@ function bindClassArrayInspector(element) {
     if (kind === 'attribute') memberSelection.attributeId = control.dataset.itemId;
     if (kind === 'operation') { memberSelection.operationId = control.dataset.itemId; memberSelection.parameterId = null; }
     if (kind === 'parameter') { memberSelection.operationId = control.dataset.operationId; memberSelection.parameterId = control.dataset.itemId; }
+    if (collapsedMembers.has(control.dataset.itemId)) collapsedMembers.delete(control.dataset.itemId);
+    else collapsedMembers.add(control.dataset.itemId);
     renderInspector();
   }));
   $('#inspector').querySelectorAll('[data-member-key]').forEach(control => control.addEventListener('input', () => {
@@ -309,6 +313,10 @@ function bindClassArrayInspector(element) {
     if (model === 'parameter') target = element.operations.find(item => item.id === control.dataset.operationId)?.parameters.find(item => item.id === control.dataset.itemId);
     if (!target) return;
     target[control.dataset.memberKey] = control.value;
+    if (control.dataset.memberKey === 'name') {
+      const title = control.closest('.array-item,.parameter-item')?.querySelector('.array-item-title');
+      if (title) title.textContent = control.value || (model === 'attribute' ? '属性' : model === 'operation' ? '操作' : '引数');
+    }
     markDirty();
     renderCanvasOnly();
     renderList();
@@ -359,8 +367,6 @@ function render() {
   $('#add-element span').textContent = definition.elementLabel;
   $('#document-title').value = doc.title;
   $('#document-description').value = doc.metadata.description || '';
-  $('#interaction-hint').hidden = doc.diagramType === 'class';
-  $('#interaction-hint').innerHTML = doc.diagramType === 'sequence' ? '<strong>メッセージ追加</strong><p>送信元の縦ライフラインを左クリックし、別のライフラインへドラッグします。オブジェクトは左右ドラッグで順番のみ変更できます。</p>' : '';
   renderCanvasOnly();
   renderList();
   renderInspector();
@@ -479,6 +485,7 @@ function opposite(side) {
 $('#document-title').addEventListener('input', event => { doc.title = event.target.value; markDirty(); });
 $('#document-description').addEventListener('input', event => { doc.metadata.description = event.target.value; markDirty(); });
 $('#new-button').onclick = requestNew;
+$('#save-button').onclick = () => window.desktop.save(false);
 $('#add-element').onclick = addElement;
 $('#add-note').onclick = addNote;
 $('#delete-button').onclick = deleteSelection;

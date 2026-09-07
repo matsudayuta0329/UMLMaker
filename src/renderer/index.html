@@ -8,9 +8,12 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark">UM</span><div><strong>UML Maker</strong><small id="file-status">無題 · 未保存</small></div></div>
+    <div class="header-left">
+      <div class="brand"><span class="brand-mark">UM</span><div><strong>UML Maker</strong><small id="file-status">無題 · 未保存</small></div></div>
+      <button id="new-button" title="新規作成 (Ctrl+N)">＋ 新規ドキュメント</button>
+      <button id="save-button" class="primary" title="保存 (Ctrl+S)">保存</button>
+    </div>
     <div class="toolbar">
-      <button id="new-button" title="新規作成 (Ctrl+N)">＋ 新規</button>
       <button id="add-element">＋ <span>要素</span></button>
       <button id="add-note">＋ メモ</button>
       <button id="delete-button" class="danger" disabled>削除</button>
@@ -21,7 +24,6 @@
       <div class="panel-heading"><span>ドキュメント</span><span id="diagram-badge" class="badge"></span></div>
       <label class="field"><span>タイトル</span><input id="document-title"></label>
       <label class="field"><span>概要（AI向け）</span><textarea id="document-description" rows="4" placeholder="この設計の目的や前提"></textarea></label>
-      <div id="interaction-hint" class="hint"></div>
     </aside>
     <section id="workspace" class="workspace">
       <div class="canvas-rulers"><span id="zoom-label">100%</span></div>
